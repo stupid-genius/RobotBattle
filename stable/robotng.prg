@@ -87,49 +87,12 @@ FoundRobot
 
 driveToCoord
 {
-	#xdest and ydest created somewere else.
-	abs(_ypos-ydest)
-	ydist = _result
-	abs(_xpos-xdest)
-	xdist = _result
-	if(xdist==0)
-		if(ydest>_ypos)
-			destAngle = 0
-		elseif(ydest<_ypos)
-			destAngle = 180
-		endif
-	elseif(ydist==0)
-		if(xdest>_xpos)
-			destAngle = 90
-		elseif(xdest<_xpos)
-			destAngle = 270
-		endif
-	else
-		if(xdest>_xpos && ydest>_ypos)
-			cartDegrees = atan(ydist/xdist)
-			gosub(toRBDegrees)
-			destAngle = RBDegrees
-		elseif(xdest<_xpos && ydest>_ypos)
-			cartDegrees = 180 - atan(ydist/xdist)
-			gosub(toRBDegrees)
-			destAngle = RBDegrees
-		elseif(xdest<_xpos && ydest<_ypos)
-			cartDegrees = 180 + atan(ydist/xdist)
-			gosub(toRBDegrees)
-			destAngle = RBDegrees
-		elseif(xdest>_xpos && ydest<_ypos)
-			cartDegrees = 360 - atan(ydist/xdist)
-			gosub(toRBDegrees)
-			destAngle = RBDegrees
-		endif
-	endif
-	
-		startAngle = _bodyaim
-		gosub(minDegreesRight)
-		bodyright(rightDegrees)
-		
-		gosub(distToCoord)
-		ahead(distance)
+	gosub(angleToCoord)
+	startAngle = _bodyaim
+	gosub(minDegreesRight)
+	bodyright(rightDegrees)
+	gosub(distToCoord)
+	ahead(distance)
 }
 
 # Useful subroutine that determines the minimum number of degrees 
@@ -181,6 +144,46 @@ toCartDegrees
 	if(cartDegrees<0)
 		abs(cartDegrees)
 		cartDegrees = 360 - _result
+	endif
+}
+
+angleToCoord
+{
+	abs(_ypos-ydest)
+	ydist = _result
+	abs(_xpos-xdest)
+	xdist = _result
+	
+	if(xdist==0)
+		if(ydest>_ypos)
+			destAngle = 0
+		elseif(ydest<_ypos)
+			destAngle = 180
+		endif
+	elseif(ydist==0)
+		if(xdest>_xpos)
+			destAngle = 90
+		elseif(xdest<_xpos)
+			destAngle = 270
+		endif
+	else
+		if(xdest>_xpos && ydest>_ypos)
+			cartDegrees = atan(ydist/xdist)
+			gosub(toRBDegrees)
+			destAngle = RBDegrees
+		elseif(xdest<_xpos && ydest>_ypos)
+			cartDegrees = 180 - atan(ydist/xdist)
+			gosub(toRBDegrees)
+			destAngle = RBDegrees
+		elseif(xdest<_xpos && ydest<_ypos)
+			cartDegrees = 180 + atan(ydist/xdist)
+			gosub(toRBDegrees)
+			destAngle = RBDegrees
+		elseif(xdest>_xpos && ydest<_ypos)
+			cartDegrees = 360 - atan(ydist/xdist)
+			gosub(toRBDegrees)
+			destAngle = RBDegrees
+		endif
 	endif
 }
 
