@@ -2,65 +2,22 @@
 Init
 {
     name("Stupid Genius")
-    regcore(TestCore)
+    regcore(SectorScanCore)
     #regdtcrobot(FoundRobot, 1)
 	
 	# have robot move to coord here
-	xdest = 250
-	ydest = 250
+	xdest = 0
+	ydest = 0
 	gosub(driveToCoord)
+	destAngle = 45
+	distance = 275
+	gosub(findCoord)
+	gosub(driveToCoord)
+}
+
+SectorScanCore
+{
 	
-	#toRBDegrees tests
-	cartDegrees = 0
-	printdeep("cartD", cartDegrees)
-	gosub(toRBDegrees)
-	printdeep("RBD", RBDegrees)
-	
-	cartDegrees = 90
-	printdeep("cartD", cartDegrees)
-	gosub(toRBDegrees)
-	printdeep("RBD", RBDegrees)
-	
-	cartDegrees = 180
-	printdeep("cartD", cartDegrees)
-	gosub(toRBDegrees)
-	printdeep("RBD", RBDegrees)
-	
-	cartDegrees = 270
-	printdeep("cartD", cartDegrees)
-	gosub(toRBDegrees)
-	printdeep("RBD", RBDegrees)
-	
-	cartDegrees = 360
-	printdeep("cartD", cartDegrees)
-	gosub(toRBDegrees)
-	printdeep("RBD", RBDegrees)
-	
-	#toCartDegrees tests
-	RBDegrees = 0
-	printdeep("RBD", RBDegrees)
-	gosub(toCartDegrees)
-	printdeep("cartD", cartDegrees)
-	
-	RBDegrees = 90
-	printdeep("RBD", RBDegrees)
-	gosub(toCartDegrees)
-	printdeep("cartD", cartDegrees)
-	
-	RBDegrees = 180
-	printdeep("RBD", RBDegrees)
-	gosub(toCartDegrees)
-	printdeep("cartD", cartDegrees)
-	
-	RBDegrees = 270
-	printdeep("RBD", RBDegrees)
-	gosub(toCartDegrees)
-	printdeep("cartD", cartDegrees)
-	
-	RBDegrees = 360
-	printdeep("RBD", RBDegrees)
-	gosub(toCartDegrees)
-	printdeep("cartD", cartDegrees)
 }
 
 TestCore
@@ -87,12 +44,30 @@ FoundRobot
 
 driveToCoord
 {
-	gosub(angleToCoord)
-	startAngle = _bodyaim
-	gosub(minDegreesRight)
-	bodyright(rightDegrees)
+	RGB = "body"
+	gosub(aimAtCoord)
 	gosub(distToCoord)
 	ahead(distance)
+}
+
+aimAtCoord
+{
+	if(RGB == "radar")
+		startAngle = _radaraim
+		gosub(angleToCoord)
+		gosub(minDegreesRight)
+		radarright(rightDegrees)
+	elseif(RGB == "gun")
+		startAngle = _gunaim
+		gosub(angleToCoord)
+		gosub(minDegreesRight)
+		gunright(rightDegrees)
+	elseif(RGB == "body")
+		startAngle = _bodyaim
+		gosub(angleToCoord)
+		gosub(minDegreesRight)
+		bodyright(rightDegrees)
+	endif
 }
 
 # Useful subroutine that determines the minimum number of degrees 
@@ -113,17 +88,14 @@ minDegreesRight
 {
     # Use the modulus operator (%) to ensure the result is from -360 to 360
     difference = (destAngle - startAngle) % 360
-	printdeep("difference", difference)
 
     # Figure out how much would be needed to rotate right    
     rightDegrees = (difference + 360) % 360
-    printdeep("rightDegrees", rightDegrees)
 	
     # If this is more than 180, left rotation would be better
     # so set rightDegrees to a negative value.
     if( rightDegrees > 180 )
         rightDegrees = rightDegrees - 360
-		printdeep("rightDegrees", rightDegrees)
     endif
 }
 
@@ -185,6 +157,13 @@ angleToCoord
 			destAngle = RBDegrees
 		endif
 	endif
+}
+
+findCoord
+{
+	# destAngle must be in cartesian degrees
+	xdest=_xpos+distance*cos(destAngle)
+	ydest=_ypos+distance*sin(destAngle)
 }
 
 distToCoord
