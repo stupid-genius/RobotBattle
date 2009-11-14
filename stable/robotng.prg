@@ -1,23 +1,63 @@
 # Init section sets up robot and registers handlers
+# To do:
+# implement ToArenaCoord() and ToTankCoord()
+# rename xdest/ydest in support of above: xA, yA, xT, yT
+# refactor all using above
+# refactor toRB/CartDegrees to use destAngle as volitile storage for values
+
 Init
 {
     name("Stupid Genius")
-    regcore(SectorScanCore)
-    #regdtcrobot(FoundRobot, 1)
+	lockall(true)
+    
+	regcore(SectorScanCore)
+    regdtcrobot(FoundRobotMine, 3)
+	regdtcmine(FoundRobotMine, 2)
+	regdtccookie(FoundCookie, 1)
 	
-	# have robot move to coord here
-	xdest = 0
-	ydest = 0
+	xdest = 18
+	ydest = 18
 	gosub(driveToCoord)
-	destAngle = 45
-	distance = 275
-	gosub(findCoord)
-	gosub(driveToCoord)
+	
+	xdest = 18
+	ydest = 180
+	RGB = "body"
+	gosub(aimAtCoord)
+	lockall(false)
+	
+	sectStart = 0
+	sectEnd = 90
+	offset=1
+	incThresh=8
+	gosub(calcIncrement)
 }
+
+#Cores
 
 SectorScanCore
 {
-	
+	while(offset<(increment/2)+1)
+		scan()
+		while(_radaraim< (sectEnd-increment)+1)
+			radarright(increment)
+			scan()
+		endw
+		destAngle=sectEnd-offset
+		startAngle=_radaraim
+		gosub(minDegreesRight)
+		radarright(rightDegrees)
+		scan()
+		while(_radaraim >sectStart+increment-1)
+			radarleft(increment)
+			scan()
+		endw
+		destAngle=sectStart+offset
+		startAngle=_radaraim
+		gosub(minDegreesRight)
+		radarright(rightDegrees)
+		offset=offset+1
+	endw
+	offset=1
 }
 
 TestCore
@@ -35,12 +75,37 @@ SearchCore
     radarright(5)
 }
 
+#Event Handlers
+
 # scan detected a robot, shoot at it then check again
-FoundRobot
+FoundRobotMine
 {
-    fire(1)
-    scan()
+	RBDegrees = _radaraim
+	gosub(toCartDegrees)
+	destAngle = cartDegrees
+	distance = _scandistfc
+	gosub(findCoord)
+	RGB = "gun"
+	gosub(aimAtCoord)
+	fire(1)
+	printdeep("radaraim", _radaraim)
+    #scan()
 }
+
+FoundCookie
+{
+	distance = _scandist+1
+	RBDegrees = _radaraim
+	gosub(toCartdegrees)
+	destAngle = cartDegrees
+	gosub(findCoord)
+	gosub(driveToCoord)
+	xdest = 18
+	ydest = 18
+	gosub(driveToCoord)
+}
+
+#Physical Action
 
 driveToCoord
 {
@@ -67,6 +132,48 @@ aimAtCoord
 		gosub(angleToCoord)
 		gosub(minDegreesRight)
 		bodyright(rightDegrees)
+	endif
+}
+
+#Internal Calculations
+
+angleToCoord
+{
+	abs(_ypos-ydest)
+	ydist = _result
+	abs(_xpos-xdest)
+	xdist = _result
+	
+	if(xdist==0)
+		if(ydest>_ypos)
+			destAngle = 0
+		elseif(ydest<_ypos)
+			destAngle = 180
+		endif
+	elseif(ydist==0)
+		if(xdest>_xpos)
+			destAngle = 90
+		elseif(xdest<_xpos)
+			destAngle = 270
+		endif
+	else
+		if(xdest>_xpos && ydest>_ypos)
+			cartDegrees = atan(ydist/xdist)
+			gosub(toRBDegrees)
+			destAngle = RBDegrees
+		elseif(xdest<_xpos && ydest>_ypos)
+			cartDegrees = 180 - atan(ydist/xdist)
+			gosub(toRBDegrees)
+			destAngle = RBDegrees
+		elseif(xdest<_xpos && ydest<_ypos)
+			cartDegrees = 180 + atan(ydist/xdist)
+			gosub(toRBDegrees)
+			destAngle = RBDegrees
+		elseif(xdest>_xpos && ydest<_ypos)
+			cartDegrees = 360 - atan(ydist/xdist)
+			gosub(toRBDegrees)
+			destAngle = RBDegrees
+		endif
 	endif
 }
 
@@ -119,46 +226,6 @@ toCartDegrees
 	endif
 }
 
-angleToCoord
-{
-	abs(_ypos-ydest)
-	ydist = _result
-	abs(_xpos-xdest)
-	xdist = _result
-	
-	if(xdist==0)
-		if(ydest>_ypos)
-			destAngle = 0
-		elseif(ydest<_ypos)
-			destAngle = 180
-		endif
-	elseif(ydist==0)
-		if(xdest>_xpos)
-			destAngle = 90
-		elseif(xdest<_xpos)
-			destAngle = 270
-		endif
-	else
-		if(xdest>_xpos && ydest>_ypos)
-			cartDegrees = atan(ydist/xdist)
-			gosub(toRBDegrees)
-			destAngle = RBDegrees
-		elseif(xdest<_xpos && ydest>_ypos)
-			cartDegrees = 180 - atan(ydist/xdist)
-			gosub(toRBDegrees)
-			destAngle = RBDegrees
-		elseif(xdest<_xpos && ydest<_ypos)
-			cartDegrees = 180 + atan(ydist/xdist)
-			gosub(toRBDegrees)
-			destAngle = RBDegrees
-		elseif(xdest>_xpos && ydest<_ypos)
-			cartDegrees = 360 - atan(ydist/xdist)
-			gosub(toRBDegrees)
-			destAngle = RBDegrees
-		endif
-	endif
-}
-
 findCoord
 {
 	# destAngle must be in cartesian degrees
@@ -170,4 +237,10 @@ distToCoord
 {
 	# xdest and ydest created somewere else.
 	distance=((xdest-_xpos)^2+(ydest-_ypos)^2) ^ 0.5
+}
+
+calcIncrement
+{
+	abs(sectStart-sectEnd)
+	increment = _result/incThresh
 }
